@@ -1,10 +1,17 @@
 import
-  std/os,
+  std/[os, random],
   pathy, pixie
 
 const
   Width = 96
   Height = 72
+  MazeCols = 23
+  MazeRows = 17
+  MazeGridWidth = MazeCols * 2 + 1
+  MazeGridHeight = MazeRows * 2 + 1
+  MazeScale = 2
+  MazeOffsetX = 1
+  MazeOffsetY = 1
   Cell = 8.0'f32
   OriginX = 116.0'f32
   OriginY = 62.0'f32
@@ -44,45 +51,116 @@ proc setRect(
     for xx in max(0, x) .. min(width - 1, x + w - 1):
       grid[gridIndex(width, xx, yy)] = value
 
+proc carveCell(
+  maze: var seq[bool],
+  x,
+  y: int
+) =
+  ## Marks one logical maze grid point as open.
+  maze[gridIndex(MazeGridWidth, x, y)] = true
+
+proc carvePassage(
+  maze: var seq[bool],
+  fromX,
+  fromY,
+  toX,
+  toY: int
+) =
+  ## Opens a passage between two adjacent maze cells.
+  let
+    ax = fromX * 2 + 1
+    ay = fromY * 2 + 1
+    bx = toX * 2 + 1
+    by = toY * 2 + 1
+  maze.carveCell(ax, ay)
+  maze.carveCell((ax + bx) div 2, (ay + by) div 2)
+  maze.carveCell(bx, by)
+
+proc buildMaze(): seq[bool] =
+  ## Builds a deterministic recursive-backtracker maze.
+  result = newSeq[bool](MazeGridWidth * MazeGridHeight)
+  var
+    rng = initRand(314159)
+    visited = newSeq[bool](MazeCols * MazeRows)
+    stack = @[(x: 0, y: 0)]
+  visited[0] = true
+  result.carveCell(1, 1)
+
+  while stack.len > 0:
+    let current = stack[stack.high]
+    var neighbors: seq[tuple[x, y: int]]
+    for delta in [
+      (x: -1, y: 0),
+      (x: 1, y: 0),
+      (x: 0, y: -1),
+      (x: 0, y: 1)
+    ]:
+      let
+        nx = current.x + delta.x
+        ny = current.y + delta.y
+      if nx < 0 or ny < 0 or nx >= MazeCols or ny >= MazeRows:
+        continue
+      if visited[gridIndex(MazeCols, nx, ny)]:
+        continue
+      neighbors.add((x: nx, y: ny))
+    if neighbors.len == 0:
+      discard stack.pop()
+      continue
+    let next = neighbors[rng.rand(neighbors.high)]
+    result.carvePassage(current.x, current.y, next.x, next.y)
+    visited[gridIndex(MazeCols, next.x, next.y)] = true
+    stack.add(next)
+
+proc addMazeLoops(maze: var seq[bool]) =
+  ## Opens a few deterministic walls to make the maze less cramped.
+  var rng = initRand(271828)
+  for _ in 0 ..< 48:
+    let
+      cellX = rng.rand(MazeCols - 2) + 1
+      cellY = rng.rand(MazeRows - 2) + 1
+      horizontal = rng.rand(1) == 0
+      x = cellX * 2 + 1
+      y = cellY * 2 + 1
+    if horizontal:
+      maze.carveCell(x + 1, y)
+    else:
+      maze.carveCell(x, y + 1)
+
+proc copyMaze(
+  grid: var seq[bool],
+  maze: openArray[bool]
+) =
+  ## Scales the logical maze into the drawing grid.
+  for y in 0 ..< MazeGridHeight:
+    for x in 0 ..< MazeGridWidth:
+      let value = maze[gridIndex(MazeGridWidth, x, y)]
+      for yy in 0 ..< MazeScale:
+        for xx in 0 ..< MazeScale:
+          grid[gridIndex(
+            Width,
+            MazeOffsetX + x * MazeScale + xx,
+            MazeOffsetY + y * MazeScale + yy
+          )] = value
+
+proc openSpot(
+  grid: var seq[bool],
+  x,
+  y: int
+) =
+  ## Opens a small start or goal spot in the maze grid.
+  grid.setRect(Width, Height, x - 1, y - 1, 3, 3, true)
+
 proc makeGrid(): seq[bool] =
   ## Builds the README drawing grid.
   result = newSeq[bool](Width * Height)
-  for i in 0 ..< result.len:
-    result[i] = true
-  result.setRect(Width, Height, 0, 0, Width, 1, false)
-  result.setRect(Width, Height, 0, Height - 1, Width, 1, false)
-  result.setRect(Width, Height, 0, 0, 1, Height, false)
-  result.setRect(Width, Height, Width - 1, 0, 1, Height, false)
-
-  for x in [18, 38, 58, 78]:
-    result.setRect(Width, Height, x, 1, 2, Height - 2, false)
-  result.setRect(Width, Height, 18, 8, 2, 6, true)
-  result.setRect(Width, Height, 18, 42, 2, 8, true)
-  result.setRect(Width, Height, 38, 18, 2, 8, true)
-  result.setRect(Width, Height, 38, 56, 2, 8, true)
-  result.setRect(Width, Height, 58, 6, 2, 8, true)
-  result.setRect(Width, Height, 58, 34, 2, 8, true)
-  result.setRect(Width, Height, 78, 24, 2, 8, true)
-  result.setRect(Width, Height, 78, 54, 2, 8, true)
-
-  for y in [16, 36, 56]:
-    result.setRect(Width, Height, 1, y, Width - 2, 2, false)
-  result.setRect(Width, Height, 4, 16, 8, 2, true)
-  result.setRect(Width, Height, 28, 16, 8, 2, true)
-  result.setRect(Width, Height, 64, 16, 8, 2, true)
-  result.setRect(Width, Height, 84, 16, 8, 2, true)
-  result.setRect(Width, Height, 20, 36, 8, 2, true)
-  result.setRect(Width, Height, 45, 36, 8, 2, true)
-  result.setRect(Width, Height, 71, 36, 8, 2, true)
-  result.setRect(Width, Height, 10, 56, 8, 2, true)
-  result.setRect(Width, Height, 40, 56, 8, 2, true)
-  result.setRect(Width, Height, 70, 56, 8, 2, true)
-
-  result.setRect(Width, Height, 8, 24, 8, 7, false)
-  result.setRect(Width, Height, 27, 5, 7, 6, false)
-  result.setRect(Width, Height, 48, 23, 6, 8, false)
-  result.setRect(Width, Height, 64, 45, 7, 8, false)
-  result.setRect(Width, Height, 82, 8, 6, 9, false)
+  var maze = buildMaze()
+  maze.addMazeLoops()
+  result.copyMaze(maze)
+  result.setRect(Width, Height, 42, 28, 12, 10, false)
+  result.setRect(Width, Height, 47, 28, 2, 10, true)
+  result.setRect(Width, Height, 42, 32, 12, 2, true)
+  result.openSpot(4, 4)
+  result.openSpot(90, 68)
 
 proc point(x, y: int): Vec2 =
   ## Converts one grid point to image space.
@@ -287,7 +365,12 @@ let
   path = newPathSpace(grid, Width, Height, DiagonalPath)
   tiles = newTilePathSpace(path, DefaultTileSize)
   jps = newJumpPointSpace(path)
-  route = Route(sx: 4, sy: 4, gx: 88, gy: 64)
+  route = Route(sx: 4, sy: 4, gx: 90, gy: 68)
+
+doAssert not path.linePassable(route.sx, route.sy, route.gx, route.gy)
+doAssert path.findPath(route.sx, route.sy, route.gx, route.gy).len > 0
+doAssert tiles.findPath(route.sx, route.sy, route.gx, route.gy).len > 0
+doAssert jps.findPath(route.sx, route.sy, route.gx, route.gy).len > 0
 
 drawPathSpace(grid, path, route)
 drawTilePathSpace(grid, tiles, route)
