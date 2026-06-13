@@ -12,6 +12,7 @@ const
   MazeScale = 2
   MazeOffsetX = 1
   MazeOffsetY = 1
+  ExampleTileSize = max(1, DefaultTileSize div 4)
   Cell = 8.0'f32
   OriginX = 116.0'f32
   OriginY = 62.0'f32
@@ -19,10 +20,11 @@ const
   ImageHeight = 700
   Background = rgba(28, 36, 107, 255)
   WhiteSoft = rgba(255, 255, 255, 30)
-  WhiteLine = rgba(255, 255, 255, 80)
   WhiteHard = rgba(255, 255, 255, 220)
   Green = rgba(0, 255, 0, 255)
   GreenSoft = rgba(0, 255, 0, 90)
+  GreenTile = rgba(0, 255, 0, 54)
+  GreenTileLine = rgba(0, 255, 0, 120)
   Red = rgba(255, 0, 0, 255)
 
 type
@@ -230,10 +232,67 @@ proc drawGrid(image: Image, grid: openArray[bool]) =
           WhiteSoft
         )
 
-proc drawTiles(image: Image, tiles: TilePathSpace) =
-  ## Draws tile boundaries and tile representative points.
+proc stepSign(value: int): int =
+  ## Returns the sign for one path segment component.
+  if value < 0:
+    return -1
+  if value > 0:
+    return 1
+  0
+
+proc markTile(
+  mask: var seq[bool],
+  tiles: TilePathSpace,
+  x,
+  y: int
+) =
+  ## Marks the tile containing one point.
+  let
+    tx = clamp(x div tiles.tileSize, 0, tiles.width - 1)
+    ty = clamp(y div tiles.tileSize, 0, tiles.height - 1)
+  mask[tiles.tileIndex(tx, ty)] = true
+
+proc selectedTileMask(
+  tiles: TilePathSpace,
+  route: Route,
+  path: openArray[PathStep]
+): seq[bool] =
+  ## Builds a tile mask from path segments.
+  result = newSeq[bool](tiles.width * tiles.height)
+  var
+    x = route.sx
+    y = route.sy
+  result.markTile(tiles, x, y)
+  for step in path:
+    while x != step.x or y != step.y:
+      let
+        dx = stepSign(step.x - x)
+        dy = stepSign(step.y - y)
+      x += dx
+      y += dy
+      result.markTile(tiles, x, y)
+
+proc drawTiles(
+  image: Image,
+  tiles: TilePathSpace,
+  route: Route,
+  path: openArray[PathStep]
+) =
+  ## Draws only the selected path tiles.
+  let selected = tiles.selectedTileMask(route, path)
   for y in 0 ..< tiles.height:
     for x in 0 ..< tiles.width:
+      if not selected[tiles.tileIndex(x, y)]:
+        continue
+      image.fillRect(
+        rect(
+          OriginX + float32(x * tiles.tileSize) * Cell,
+          OriginY + float32(y * tiles.tileSize) * Cell,
+          float32(tiles.tileSize) * Cell,
+          float32(tiles.tileSize) * Cell
+        ),
+        GreenTile
+      )
       image.strokeRect(
         rect(
           OriginX + float32(x * tiles.tileSize) * Cell,
@@ -241,17 +300,16 @@ proc drawTiles(image: Image, tiles: TilePathSpace) =
           float32(tiles.tileSize) * Cell,
           float32(tiles.tileSize) * Cell
         ),
-        WhiteLine,
-        1.0
+        GreenTileLine,
+        1.5
       )
-  for node in tiles.all:
-    image.fillCircle(point(node.x, node.y), 2, WhiteHard)
 
 proc drawPath(
   image: Image,
   route: Route,
   path: openArray[PathStep],
-  width = 3.0'f32
+  width = 3.0'f32,
+  circles = true
 ) =
   ## Draws one path as a connected green polyline.
   var previous = point(route.sx, route.sy)
@@ -259,6 +317,8 @@ proc drawPath(
     let current = point(step.x, step.y)
     image.strokeLine(previous, current, Green, width)
     previous = current
+  if not circles:
+    return
   for step in path:
     image.fillCircle(point(step.x, step.y), 3, Green)
   image.fillCircle(point(route.sx, route.sy), 5, Red)
@@ -297,8 +357,8 @@ proc drawTilePathSpace(
   let pathResult = tiles.findPath(route.sx, route.sy, route.gx, route.gy)
   var image = newImage(ImageWidth, ImageHeight)
   image.drawGrid(grid)
-  image.drawTiles(tiles)
-  image.drawPath(route, pathResult, 4.0)
+  image.drawTiles(tiles, route, pathResult)
+  image.drawPath(route, pathResult, 4.0, circles = false)
   image.writeFile("examples/TilePathSpace.png")
 
 proc drawJumpPointSpace(
@@ -363,7 +423,7 @@ createDir("examples")
 let
   grid = makeGrid()
   path = newPathSpace(grid, Width, Height, DiagonalPath)
-  tiles = newTilePathSpace(path, DefaultTileSize)
+  tiles = newTilePathSpace(path, ExampleTileSize)
   jps = newJumpPointSpace(path)
   route = Route(sx: 4, sy: 4, gx: 90, gy: 68)
 
