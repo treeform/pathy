@@ -1,0 +1,60 @@
+nimTitle	pathy	pathy.html	module src/pathy		0
+nim	DefaultTileSize	pathy.html#DefaultTileSize	const DefaultTileSize		5
+nim	PathyError	pathy.html#PathyError	object PathyError		18
+nim	CardinalPath	pathy.html#CardinalPath	PathMode.CardinalPath		20
+nim	DiagonalPath	pathy.html#DiagonalPath	PathMode.DiagonalPath		20
+nim	PathMode	pathy.html#PathMode	enum PathMode		20
+nim	PathStep	pathy.html#PathStep	object PathStep		24
+nim	PathSpace	pathy.html#PathSpace	type PathSpace		29
+nim	TilePathSpace	pathy.html#TilePathSpace	type TilePathSpace		42
+nim	JumpPointSpace	pathy.html#JumpPointSpace	type JumpPointSpace		56
+nim	JpsSpace	pathy.html#JpsSpace	type JpsSpace		68
+nim	pathIndex	pathy.html#pathIndex,PathSpace,int,int	proc pathIndex(path: PathSpace; x, y: int): int		120
+nim	tileIndex	pathy.html#tileIndex,TilePathSpace,int,int	proc tileIndex(tiles: TilePathSpace; x, y: int): int		124
+nim	inBounds	pathy.html#inBounds,PathSpace,int,int	proc inBounds(path: PathSpace; x, y: int): bool		132
+nim	inBounds	pathy.html#inBounds,TilePathSpace,int,int	proc inBounds(tiles: TilePathSpace; x, y: int): bool		136
+nim	passable	pathy.html#passable,PathSpace,int,int	proc passable(path: PathSpace; x, y: int): bool		140
+nim	passable	pathy.html#passable,TilePathSpace,int,int	proc passable(tiles: TilePathSpace; x, y: int): bool		146
+nim	update	pathy.html#update,PathSpace,openArray[bool]	proc update(path: PathSpace; walkMask: openArray[bool])		152
+nim	newPathSpace	pathy.html#newPathSpace,openArray[bool],int,int	proc newPathSpace(walkMask: openArray[bool]; width, height: int; mode = DiagonalPath): PathSpace		166
+nim	newPathSpace	pathy.html#newPathSpace,int,int	proc newPathSpace(width, height: int; mode = DiagonalPath): PathSpace		180
+nim	pathHeuristic	pathy.html#pathHeuristic,PathMode,int,int,int,int	proc pathHeuristic(mode: PathMode; ax, ay, bx, by: int): int		191
+nim	pathHeuristic	pathy.html#pathHeuristic,PathSpace,int,int,int,int	proc pathHeuristic(path: PathSpace; ax, ay, bx, by: int): int		205
+nim	pathStepPassable	pathy.html#pathStepPassable,PathSpace,int,int,int,int	proc pathStepPassable(path: PathSpace; x, y, dx, dy: int): bool		223
+nim	findPath	pathy.html#findPath,PathSpace,int,int,int,int	proc findPath(path: PathSpace; startX, startY, goalX, goalY: int): seq[PathStep]		304
+nim	newTilePathSpace	pathy.html#newTilePathSpace,PathSpace	proc newTilePathSpace(path: PathSpace; tileSize = DefaultTileSize): TilePathSpace		414
+nim	newTilePathSpace	pathy.html#newTilePathSpace,openArray[bool],int,int	proc newTilePathSpace(walkMask: openArray[bool]; width, height: int;\n                 tileSize = DefaultTileSize; mode = DiagonalPath): TilePathSpace		426
+nim	update	pathy.html#update,TilePathSpace,openArray[bool]	proc update(tiles: TilePathSpace; walkMask: openArray[bool])		437
+nim	update	pathy.html#update,TilePathSpace,PathSpace	proc update(tiles: TilePathSpace; path: PathSpace)		442
+nim	linePassable	pathy.html#linePassable,PathSpace,int,int,int,int	proc linePassable(path: PathSpace; ax, ay, bx, by: int): bool		466
+nim	findTilePath	pathy.html#findTilePath,TilePathSpace,int,int,int,int	proc findTilePath(tiles: TilePathSpace; startX, startY, goalX, goalY: int): seq[\n    PathStep]		624
+nim	findPath	pathy.html#findPath,TilePathSpace,int,int,int,int	proc findPath(tiles: TilePathSpace; startX, startY, goalX, goalY: int): seq[PathStep]		677
+nim	newJumpPointSpace	pathy.html#newJumpPointSpace,PathSpace	proc newJumpPointSpace(path: PathSpace): JumpPointSpace		1169
+nim	newJumpPointSpace	pathy.html#newJumpPointSpace,openArray[bool],int,int	proc newJumpPointSpace(walkMask: openArray[bool]; width, height: int;\n                  mode = DiagonalPath): JumpPointSpace		1175
+nim	newJpsSpace	pathy.html#newJpsSpace,PathSpace	proc newJpsSpace(path: PathSpace): JpsSpace		1185
+nim	newJpsSpace	pathy.html#newJpsSpace,openArray[bool],int,int	proc newJpsSpace(walkMask: openArray[bool]; width, height: int; mode = DiagonalPath): JpsSpace		1189
+nim	update	pathy.html#update,JumpPointSpace,openArray[bool]	proc update(jps: JumpPointSpace; walkMask: openArray[bool])		1198
+nim	update	pathy.html#update,JumpPointSpace,PathSpace	proc update(jps: JumpPointSpace; path: PathSpace)		1203
+nim	findJumpPath	pathy.html#findJumpPath,JumpPointSpace,int,int,int,int	proc findJumpPath(jps: JumpPointSpace; startX, startY, goalX, goalY: int): seq[\n    PathStep]		1383
+nim	findPath	pathy.html#findPath,JumpPointSpace,int,int,int,int	proc findPath(jps: JumpPointSpace; startX, startY, goalX, goalY: int): seq[PathStep]		1471
+nim	nearestPassable	pathy.html#nearestPassable,PathSpace,int,int,int	proc nearestPassable(path: PathSpace; x, y: int; radius = 96): PathStep		1483
+nim	firstPassable	pathy.html#firstPassable,PathSpace	proc firstPassable(path: PathSpace): PathStep		1502
+nim	pathDistance	pathy.html#pathDistance,PathMode,int,int,openArray[PathStep]	proc pathDistance(mode: PathMode; startX, startY: int; path: openArray[PathStep]): int		1544
+nim	pathDistance	pathy.html#pathDistance,PathSpace,int,int,openArray[PathStep]	proc pathDistance(space: PathSpace; startX, startY: int; path: openArray[PathStep]): int		1559
+nim	pathDistance	pathy.html#pathDistance,TilePathSpace,int,int,openArray[PathStep]	proc pathDistance(tiles: TilePathSpace; startX, startY: int;\n             path: openArray[PathStep]): int		1568
+nim	pathDistance	pathy.html#pathDistance,JumpPointSpace,int,int,openArray[PathStep]	proc pathDistance(jps: JumpPointSpace; startX, startY: int; path: openArray[PathStep]): int		1577
+nim	all	pathy.html#all.i,PathSpace	iterator all(path: PathSpace): PathStep		1586
+nim	all	pathy.html#all.i,TilePathSpace	iterator all(tiles: TilePathSpace): PathStep		1593
+nim	jumpPoints	pathy.html#jumpPoints.i,JumpPointSpace	iterator jumpPoints(jps: JumpPointSpace): PathStep		1599
+nim	jumpDistance	pathy.html#jumpDistance,JumpPointSpace,int,int,int	proc jumpDistance(jps: JumpPointSpace; x, y, dir: int): int		1607
+nimgrp	newpathspace	pathy.html#newPathSpace-procs-all	proc		166
+nimgrp	inbounds	pathy.html#inBounds-procs-all	proc		132
+nimgrp	newjpsspace	pathy.html#newJpsSpace-procs-all	proc		1185
+nimgrp	findpath	pathy.html#findPath-procs-all	proc		304
+nimgrp	newtilepathspace	pathy.html#newTilePathSpace-procs-all	proc		414
+nimgrp	newjumppointspace	pathy.html#newJumpPointSpace-procs-all	proc		1169
+nimgrp	pathdistance	pathy.html#pathDistance-procs-all	proc		1544
+nimgrp	update	pathy.html#update-procs-all	proc		152
+nimgrp	passable	pathy.html#passable-procs-all	proc		140
+nimgrp	pathheuristic	pathy.html#pathHeuristic-procs-all	proc		191
+nimgrp	all	pathy.html#all-iterators-all	iterator		1586
